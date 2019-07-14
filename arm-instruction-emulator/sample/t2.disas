@@ -1,0 +1,243 @@
+
+t2:     file format elf64-littleaarch64
+
+
+Disassembly of section .note.gnu.build-id:
+
+0000000000400120 <.note.gnu.build-id>:
+  400120:	00000004 	.inst	0x00000004 ; undefined
+  400124:	00000014 	.inst	0x00000014 ; undefined
+  400128:	00000003 	.inst	0x00000003 ; undefined
+  40012c:	00554e47 	.inst	0x00554e47 ; undefined
+  400130:	8ff481c3 	.inst	0x8ff481c3 ; undefined
+  400134:	f5e1986f 	.inst	0xf5e1986f ; undefined
+  400138:	42c1ebb4 	.inst	0x42c1ebb4 ; undefined
+  40013c:	72232b2b 	ands	w11, w25, #0xe00000ff
+  400140:	220590b7 	.inst	0x220590b7 ; undefined
+
+Disassembly of section .text:
+
+0000000000400148 <write_char>:
+  400148:	90000081 	adrp	x1, 410000 <start+0xfd50>
+  40014c:	f941f821 	ldr	x1, [x1,#1008]
+  400150:	39000020 	strb	w0, [x1]
+  400154:	d65f03c0 	ret
+
+0000000000400158 <write_string>:
+  400158:	39400001 	ldrb	w1, [x0]
+  40015c:	90000083 	adrp	x3, 410000 <start+0xfd50>
+  400160:	340000a1 	cbz	w1, 400174 <write_string+0x1c>
+  400164:	f941f862 	ldr	x2, [x3,#1008]
+  400168:	39000041 	strb	w1, [x2]
+  40016c:	38401c01 	ldrb	w1, [x0,#1]!
+  400170:	35ffffa1 	cbnz	w1, 400164 <write_string+0xc>
+  400174:	d65f03c0 	ret
+
+0000000000400178 <random_init>:
+  400178:	90000083 	adrp	x3, 410000 <start+0xfd50>
+  40017c:	90000082 	adrp	x2, 410000 <start+0xfd50>
+  400180:	12b73604 	mov	w4, #0x464fffff            	// #1179647999
+  400184:	7100001f 	cmp	w0, #0x0
+  400188:	2a2003e1 	mvn	w1, w0
+  40018c:	7a441004 	ccmp	w0, w4, #0x4, ne
+  400190:	b9041060 	str	w0, [x3,#1040]
+  400194:	b9041441 	str	w1, [x2,#1044]
+  400198:	54000061 	b.ne	4001a4 <random_init+0x2c>
+  40019c:	11000404 	add	w4, w0, #0x1
+  4001a0:	b9041064 	str	w4, [x3,#1040]
+  4001a4:	12adf2e3 	mov	w3, #0x9068ffff            	// #-1872166913
+  4001a8:	7100003f 	cmp	w1, #0x0
+  4001ac:	7a431024 	ccmp	w1, w3, #0x4, ne
+  4001b0:	54000061 	b.ne	4001bc <random_init+0x44>
+  4001b4:	4b0003e0 	neg	w0, w0
+  4001b8:	b9041440 	str	w0, [x2,#1044]
+  4001bc:	d65f03c0 	ret
+
+00000000004001c0 <random_next>:
+  4001c0:	90000086 	adrp	x6, 410000 <start+0xfd50>
+  4001c4:	90000085 	adrp	x5, 410000 <start+0xfd50>
+  4001c8:	52920d28 	mov	w8, #0x9069                	// #36969
+  4001cc:	5288ca07 	mov	w7, #0x4650                	// #18000
+  4001d0:	b94414c4 	ldr	w4, [x6,#1044]
+  4001d4:	b94410a3 	ldr	w3, [x5,#1040]
+  4001d8:	12003c82 	and	w2, w4, #0xffff
+  4001dc:	12003c61 	and	w1, w3, #0xffff
+  4001e0:	53107c84 	lsr	w4, w4, #16
+  4001e4:	53107c60 	lsr	w0, w3, #16
+  4001e8:	1b081042 	madd	w2, w2, w8, w4
+  4001ec:	1b070020 	madd	w0, w1, w7, w0
+  4001f0:	b90414c2 	str	w2, [x6,#1044]
+  4001f4:	b90410a0 	str	w0, [x5,#1040]
+  4001f8:	0b024000 	add	w0, w0, w2, lsl #16
+  4001fc:	d65f03c0 	ret
+
+0000000000400200 <write_uint32>:
+  400200:	90000081 	adrp	x1, 410000 <start+0xfd50>
+  400204:	d35c7c04 	ubfx	x4, x0, #28, #4
+  400208:	910fc022 	add	x2, x1, #0x3f0
+  40020c:	d3586c03 	ubfx	x3, x0, #24, #4
+  400210:	8b040044 	add	x4, x2, x4
+  400214:	8b030043 	add	x3, x2, x3
+  400218:	f941f828 	ldr	x8, [x1,#1008]
+  40021c:	d3545c07 	ubfx	x7, x0, #20, #4
+  400220:	8b070047 	add	x7, x2, x7
+  400224:	d3504c06 	ubfx	x6, x0, #16, #4
+  400228:	39404084 	ldrb	w4, [x4,#16]
+  40022c:	8b060046 	add	x6, x2, x6
+  400230:	d34c3c05 	ubfx	x5, x0, #12, #4
+  400234:	39000104 	strb	w4, [x8]
+  400238:	8b050045 	add	x5, x2, x5
+  40023c:	f941f824 	ldr	x4, [x1,#1008]
+  400240:	39404063 	ldrb	w3, [x3,#16]
+  400244:	39000083 	strb	w3, [x4]
+  400248:	d3482c04 	ubfx	x4, x0, #8, #4
+  40024c:	d3441c03 	ubfx	x3, x0, #4, #4
+  400250:	92400c00 	and	x0, x0, #0xf
+  400254:	f941f828 	ldr	x8, [x1,#1008]
+  400258:	8b040044 	add	x4, x2, x4
+  40025c:	394040e7 	ldrb	w7, [x7,#16]
+  400260:	8b030043 	add	x3, x2, x3
+  400264:	8b000040 	add	x0, x2, x0
+  400268:	39000107 	strb	w7, [x8]
+  40026c:	f941f822 	ldr	x2, [x1,#1008]
+  400270:	394040c6 	ldrb	w6, [x6,#16]
+  400274:	39000046 	strb	w6, [x2]
+  400278:	f941f822 	ldr	x2, [x1,#1008]
+  40027c:	394040a5 	ldrb	w5, [x5,#16]
+  400280:	39000045 	strb	w5, [x2]
+  400284:	f941f822 	ldr	x2, [x1,#1008]
+  400288:	39404084 	ldrb	w4, [x4,#16]
+  40028c:	39000044 	strb	w4, [x2]
+  400290:	f941f822 	ldr	x2, [x1,#1008]
+  400294:	39404063 	ldrb	w3, [x3,#16]
+  400298:	39000043 	strb	w3, [x2]
+  40029c:	f941f821 	ldr	x1, [x1,#1008]
+  4002a0:	39404000 	ldrb	w0, [x0,#16]
+  4002a4:	39000020 	strb	w0, [x1]
+  4002a8:	d65f03c0 	ret
+  4002ac:	d503201f 	nop
+
+00000000004002b0 <start>:
+  4002b0:	90000002 	adrp	x2, 400000 <write_char-0x148>
+  4002b4:	52800d01 	mov	w1, #0x68                  	// #104
+  4002b8:	910f8042 	add	x2, x2, #0x3e0
+  4002bc:	90000083 	adrp	x3, 410000 <start+0xfd50>
+  4002c0:	f941f864 	ldr	x4, [x3,#1008]
+  4002c4:	910fc060 	add	x0, x3, #0x3f0
+  4002c8:	39000081 	strb	w1, [x4]
+  4002cc:	38401c41 	ldrb	w1, [x2,#1]!
+  4002d0:	35ffff81 	cbnz	w1, 4002c0 <start+0x10>
+  4002d4:	52800148 	mov	w8, #0xa                   	// #10
+  4002d8:	9000008a 	adrp	x10, 410000 <start+0xfd50>
+  4002dc:	90000089 	adrp	x9, 410000 <start+0xfd50>
+  4002e0:	9110514a 	add	x10, x10, #0x414
+  4002e4:	91104129 	add	x9, x9, #0x410
+  4002e8:	2a0803ed 	mov	w13, w8
+  4002ec:	52805344 	mov	w4, #0x29a                 	// #666
+  4002f0:	12805341 	mov	w1, #0xfffffd65            	// #-667
+  4002f4:	52920d2c 	mov	w12, #0x9069                	// #36969
+  4002f8:	5288ca0b 	mov	w11, #0x4650                	// #18000
+  4002fc:	14000003 	b	400308 <start+0x58>
+  400300:	b9400124 	ldr	w4, [x9]
+  400304:	b9400141 	ldr	w1, [x10]
+  400308:	12003c23 	and	w3, w1, #0xffff
+  40030c:	12003c82 	and	w2, w4, #0xffff
+  400310:	53107c21 	lsr	w1, w1, #16
+  400314:	53107c84 	lsr	w4, w4, #16
+  400318:	f940000e 	ldr	x14, [x0]
+  40031c:	71000508 	subs	w8, w8, #0x1
+  400320:	1b0b1042 	madd	w2, w2, w11, w4
+  400324:	1b0c0463 	madd	w3, w3, w12, w1
+  400328:	b9000122 	str	w2, [x9]
+  40032c:	0b034041 	add	w1, w2, w3, lsl #16
+  400330:	b9000143 	str	w3, [x10]
+  400334:	d35c7c23 	ubfx	x3, x1, #28, #4
+  400338:	d3586c27 	ubfx	x7, x1, #24, #4
+  40033c:	8b030002 	add	x2, x0, x3
+  400340:	8b070007 	add	x7, x0, x7
+  400344:	d3545c26 	ubfx	x6, x1, #20, #4
+  400348:	d3504c25 	ubfx	x5, x1, #16, #4
+  40034c:	8b060006 	add	x6, x0, x6
+  400350:	8b050005 	add	x5, x0, x5
+  400354:	39404042 	ldrb	w2, [x2,#16]
+  400358:	d34c3c24 	ubfx	x4, x1, #12, #4
+  40035c:	8b040004 	add	x4, x0, x4
+  400360:	d3482c23 	ubfx	x3, x1, #8, #4
+  400364:	390001c2 	strb	w2, [x14]
+  400368:	8b030003 	add	x3, x0, x3
+  40036c:	d3441c22 	ubfx	x2, x1, #4, #4
+  400370:	92400c21 	and	x1, x1, #0xf
+  400374:	f940000e 	ldr	x14, [x0]
+  400378:	8b020002 	add	x2, x0, x2
+  40037c:	394040e7 	ldrb	w7, [x7,#16]
+  400380:	8b010001 	add	x1, x0, x1
+  400384:	390001c7 	strb	w7, [x14]
+  400388:	f9400007 	ldr	x7, [x0]
+  40038c:	394040c6 	ldrb	w6, [x6,#16]
+  400390:	390000e6 	strb	w6, [x7]
+  400394:	f9400006 	ldr	x6, [x0]
+  400398:	394040a5 	ldrb	w5, [x5,#16]
+  40039c:	390000c5 	strb	w5, [x6]
+  4003a0:	f9400005 	ldr	x5, [x0]
+  4003a4:	39404084 	ldrb	w4, [x4,#16]
+  4003a8:	390000a4 	strb	w4, [x5]
+  4003ac:	f9400004 	ldr	x4, [x0]
+  4003b0:	39404063 	ldrb	w3, [x3,#16]
+  4003b4:	39000083 	strb	w3, [x4]
+  4003b8:	f9400003 	ldr	x3, [x0]
+  4003bc:	39404042 	ldrb	w2, [x2,#16]
+  4003c0:	39000062 	strb	w2, [x3]
+  4003c4:	f9400002 	ldr	x2, [x0]
+  4003c8:	39404021 	ldrb	w1, [x1,#16]
+  4003cc:	39000041 	strb	w1, [x2]
+  4003d0:	f9400001 	ldr	x1, [x0]
+  4003d4:	3900002d 	strb	w13, [x1]
+  4003d8:	54fff941 	b.ne	400300 <start+0x50>
+  4003dc:	d65f03c0 	ret
+
+Disassembly of section .rodata:
+
+00000000004003e0 <.rodata>:
+  4003e0:	6c6c6568 	.word	0x6c6c6568
+  4003e4:	00000a6f 	.word	0x00000a6f
+
+Disassembly of section .data:
+
+00000000004103f0 <magic>:
+  4103f0:	ffffffff 	.word	0xffffffff
+  4103f4:	ffffffff 	.word	0xffffffff
+	...
+
+0000000000410400 <hex_chars>:
+  410400:	33323130 	.word	0x33323130
+  410404:	37363534 	.word	0x37363534
+  410408:	62613938 	.word	0x62613938
+  41040c:	66656463 	.word	0x66656463
+
+Disassembly of section .bss:
+
+0000000000410410 <__bss_start>:
+  410410:	00000000 	.word	0x00000000
+
+0000000000410414 <z>:
+  410414:	00000000 	.word	0x00000000
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	3a434347 	ccmn	w26, w3, #0x7, mi
+   4:	62552820 	.inst	0x62552820 ; undefined
+   8:	75746e75 	.inst	0x75746e75 ; undefined
+   c:	6e694c2f 	uqshl	v15.8h, v1.8h, v9.8h
+  10:	206f7261 	.inst	0x206f7261 ; undefined
+  14:	2e342e35 	uqsub	v21.8b, v17.8b, v20.8b
+  18:	75362d30 	.inst	0x75362d30 ; undefined
+  1c:	746e7562 	.inst	0x746e7562 ; undefined
+  20:	317e3175 	adds	w21, w11, #0xf8c, lsl #12
+  24:	34302e36 	cbz	w22, 605e8 <write_char-0x39fb60>
+  28:	2029392e 	.inst	0x2029392e ; undefined
+  2c:	2e342e35 	uqsub	v21.8b, v17.8b, v20.8b
+  30:	30322030 	adr	x16, 64435 <write_char-0x39bd13>
+  34:	36303631 	tbz	w17, #6, 6f8 <write_char-0x3ffa50>
+  38:	Address 0x0000000000000038 is out of bounds.
+

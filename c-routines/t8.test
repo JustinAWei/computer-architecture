@@ -1,0 +1,64 @@
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <inttypes.h>
+
+#include "go.h"
+
+void ints() {
+    int x = 0;
+    while(1) {
+        send(me(),asInt(x));
+        x++;
+    }
+}
+
+bool isPrime(uint64_t v) {
+    switch(v) {
+    case 0: return false;
+    case 1: return false;
+    case 2: return true;
+    default:
+        if ((v % 2) == 0) return false;
+        for (int c = 3; c < v/2; c++) {
+            if ((v % c) == 0) return false;
+        }
+    }
+    return true;
+}
+
+void skipper(void) {
+    Channel* src = receive(me()).asChannel;
+    int count = receive(me()).asInt;
+    for (int i=0; i<count; i++) receive(src);
+    while (1) {
+        send(me(),receive(src));
+    }
+}
+
+Channel* skip(int n, Channel* in) {
+    Channel* it = go(skipper);
+    send(it,asChannel(in));
+    send(it,asInt(n));
+    return it;
+}
+
+void primes() {
+    Channel* the_ints = go(ints);
+
+    while (1) {
+        int v = receive(the_ints).asInt;
+        if (isPrime(v)) send(me(),asInt(v));
+        v++;
+    }
+}
+
+int main() {
+    Channel* the_primes = skip(1000,go(primes));
+
+    for (int i=0; i<12; i++) {
+        printf("%d\n",receive(the_primes).asInt);
+    }
+    return 0;
+}

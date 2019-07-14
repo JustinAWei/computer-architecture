@@ -1,0 +1,20 @@
+#include <stdio.h>
+#include <inttypes.h>
+
+#include "go.h"
+
+void echo() {
+    long x = receive(me()).asLong;
+    send(me(),asLong(x+1));
+}
+
+int main() {
+    Channel* ch = go(echo);
+    send(ch,asLong(100));
+    printf("%ld\n",receive(ch).asLong);
+    printf("this should be the last line\n");
+    send(ch,asLong(0));
+    printf("should never see this\n");
+
+    return 0;
+}

@@ -1,0 +1,32 @@
+Implementation of a single-cycle cpu architecture with byte addressable memory in verilog.
+Supports the following instructions:
+      - Add (immediate)
+      - b   (unconditional)
+      - ldrb (immediate, unsigned offset)
+
+
+To compile
+~~~~~~~~~~
+
+    make
+
+To run
+~~~~~~
+
+    make run
+
+
+To test
+~~~~~~~
+
+    make test
+
+
+The make targets/files:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+    <test name>.raw        => the raw output from running the test
+    <test name>.out        => lines from *.raw that start with #
+    <test name>.vcd        => vcd file after running test
+    <test name>.ok         => expected output
+    <test name>.hex        => the test program

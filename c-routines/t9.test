@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include "go.h"
+
+char* rock[] = {
+    "Pink Floyd",
+    "The Doobie Brothers",
+    "The Who",
+    "The Clash",
+    "Deep Purple",
+    "Santana",
+    0
+};
+
+char* classic[] = {
+    "Bach",
+    "Wagner",
+    "Mozart",
+    "Beethoven",
+    "Vivaldi",
+    0
+};
+
+char* jazz[] = {
+    "Dave Brubeck",
+    "Keith Garrett",
+    "Jimmy Smith",
+    "Miles Davis",
+    0
+};
+
+void genres(void) {
+    send(me(),asPointer(rock));
+    send(me(),asPointer(jazz));
+    send(me(),asPointer(classic));
+    poison(me());
+}
+
+void titlesForGenre(void) {
+    char** genre = (char**) receive(me()).asPointer;
+    int i = 0;
+    while (1) {
+        char* title = genre[i++];
+        if (title == 0) break;
+        send(me(),asString(title));
+    }
+    poison(me());
+}
+
+void bind() {
+    Func a = receive(me()).asFunc;
+    Func b = receive(me()).asFunc;
+
+    Channel* ch_a = go(a);
+    
+    while (!isPoisoned(ch_a)) {
+        Value p = receive(ch_a);
+        Channel* ch_b = go(b);
+        send(ch_b,p);
+        while (!isPoisoned(ch_b)) {
+            Value q = receive(ch_b);
+            send(me(),q);
+        }
+    }
+
+    poison(me());
+
+}
+
+int main() {
+    Channel* ch = go(bind);
+    send(ch,asFunc(genres));
+    send(ch,asFunc(titlesForGenre));
+
+    while (1) {
+        char* x = receive(ch).asString;
+        printf("%s\n",x);
+    }
+}

@@ -1,0 +1,11 @@
+Implementation of malloc/free using a linked list representation of memory blocks
+
+To compile:
+~~~~~~~~~~~
+
+    make
+
+To run test:
+~~~~~~~~~~~~
+
+    make clean test

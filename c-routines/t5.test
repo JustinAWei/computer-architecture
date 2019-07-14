@@ -1,0 +1,34 @@
+#include <stdio.h>
+#include <inttypes.h>
+
+#include "go.h"
+
+int counter = 0;
+
+void h() {
+    send(me(),asInt(counter));
+    if (counter < 10) {
+        counter ++;
+        again();
+    }
+}
+
+void g() {
+    h();
+}
+
+void f() {
+    g();
+}
+
+int main() {
+    Channel* child = go(f);
+
+    while (1) {
+        printf("%d\n",receive(child).asInt);
+    }
+
+    printf("never\n");
+
+    return 0;
+}

@@ -1,0 +1,92 @@
+
+t10000:     file format elf64-littleaarch64
+
+
+Disassembly of section .note.gnu.build-id:
+
+0000000000400120 <.note.gnu.build-id>:
+  400120:	00000004 	.inst	0x00000004 ; undefined
+  400124:	00000014 	.inst	0x00000014 ; undefined
+  400128:	00000003 	.inst	0x00000003 ; undefined
+  40012c:	00554e47 	.inst	0x00554e47 ; undefined
+  400130:	c562bbb2 	.inst	0xc562bbb2 ; undefined
+  400134:	62723ad2 	.inst	0x62723ad2 ; undefined
+  400138:	9dbd45c5 	.inst	0x9dbd45c5 ; undefined
+  40013c:	dd191360 	.inst	0xdd191360 ; undefined
+  400140:	fda3ef00 	.inst	0xfda3ef00 ; undefined
+
+Disassembly of section .text:
+
+0000000000400148 <write_char>:
+  400148:	90000081 	adrp	x1, 410000 <start+0xfe88>
+  40014c:	f940f821 	ldr	x1, [x1,#496]
+  400150:	39000020 	strb	w0, [x1]
+  400154:	d65f03c0 	ret
+
+0000000000400158 <write_string>:
+  400158:	39400001 	ldrb	w1, [x0]
+  40015c:	90000083 	adrp	x3, 410000 <start+0xfe88>
+  400160:	340000a1 	cbz	w1, 400174 <write_string+0x1c>
+  400164:	f940f862 	ldr	x2, [x3,#496]
+  400168:	39000041 	strb	w1, [x2]
+  40016c:	38401c01 	ldrb	w1, [x0,#1]!
+  400170:	35ffffa1 	cbnz	w1, 400164 <write_string+0xc>
+  400174:	d65f03c0 	ret
+
+0000000000400178 <start>:
+  400178:	90000003 	adrp	x3, 400000 <write_char-0x148>
+  40017c:	52800d01 	mov	w1, #0x68                  	// #104
+  400180:	91076063 	add	x3, x3, #0x1d8
+  400184:	90000082 	adrp	x2, 410000 <start+0xfe88>
+  400188:	f940f844 	ldr	x4, [x2,#496]
+  40018c:	9107c040 	add	x0, x2, #0x1f0
+  400190:	39000081 	strb	w1, [x4]
+  400194:	38401c61 	ldrb	w1, [x3,#1]!
+  400198:	35ffff81 	cbnz	w1, 400188 <start+0x10>
+  40019c:	f9400401 	ldr	x1, [x0,#8]
+  4001a0:	b40000c1 	cbz	x1, 4001b8 <start+0x40>
+  4001a4:	f9400401 	ldr	x1, [x0,#8]
+  4001a8:	d1000421 	sub	x1, x1, #0x1
+  4001ac:	f9000401 	str	x1, [x0,#8]
+  4001b0:	f9400401 	ldr	x1, [x0,#8]
+  4001b4:	b5ffff81 	cbnz	x1, 4001a4 <start+0x2c>
+  4001b8:	90000001 	adrp	x1, 400000 <write_char-0x148>
+  4001bc:	52800ce0 	mov	w0, #0x67                  	// #103
+  4001c0:	91078021 	add	x1, x1, #0x1e0
+  4001c4:	f940f843 	ldr	x3, [x2,#496]
+  4001c8:	39000060 	strb	w0, [x3]
+  4001cc:	38401c20 	ldrb	w0, [x1,#1]!
+  4001d0:	35ffffa0 	cbnz	w0, 4001c4 <start+0x4c>
+  4001d4:	d65f03c0 	ret
+
+Disassembly of section .rodata:
+
+00000000004001d8 <.rodata>:
+  4001d8:	6c6c6568 	.word	0x6c6c6568
+  4001dc:	00000a6f 	.word	0x00000a6f
+  4001e0:	646f6f67 	.word	0x646f6f67
+  4001e4:	0a657962 	.word	0x0a657962
+	...
+
+Disassembly of section .data:
+
+00000000004101f0 <magic>:
+  4101f0:	ffffffff 	.word	0xffffffff
+  4101f4:	ffffffff 	.word	0xffffffff
+
+00000000004101f8 <n>:
+  4101f8:	00002710 	.word	0x00002710
+  4101fc:	00000000 	.word	0x00000000
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	3a434347 	ccmn	w26, w3, #0x7, mi
+   4:	694c2820 	ldpsw	x0, x10, [x1,#96]
+   8:	6f72616e 	umlsl2	v14.4s, v11.8h, v2.h[3]
+   c:	43434720 	.inst	0x43434720 ; undefined
+  10:	352e3520 	cbnz	w0, 5c6b4 <write_char-0x3a3a94>
+  14:	3130322d 	adds	w13, w17, #0xc0c
+  18:	30312e37 	adr	x23, 625dd <write_char-0x39db6b>
+  1c:	2e352029 	usubl	v9.8h, v1.8b, v21.8b
+  20:	00302e35 	.inst	0x00302e35 ; NYI

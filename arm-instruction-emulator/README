@@ -1,0 +1,62 @@
+An AArch64 instruction emulator. Works with the following instructions:
+
+ADD (immediate)
+ADRP
+MOV (wide imm)
+LDR (imm unsign)
+LDRB (imm pre)
+STRB (imm uns)
+CBNZ
+CBZ
+SUBS (imm)
+SUB (imm)
+ORR (shft reg)
+B
+AND (immediate)
+UBFM (imm)
+MADD
+ADD (shifted reg)
+LDRB (imm uns)
+STR (imm uns)
+MOVN
+B.NE
+
+
+Files:
+~~~~~~~~~~~~~~~~
+
+    - sample/*.c     a test written in C
+    - sample/*.s     a test written in assembly
+    - sample/*.S     a test written in assembly
+    - sample/*       a test executable
+    - sample/*.disas a test disassembly
+    - *.ok           the expected output from running the test
+    - *.out          the actual output produced when running the test
+
+
+To compile the emulator:
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+    make
+
+
+To compile the tests:
+~~~~~~~~~~~~~~~~~~~~~
+    (cd sample; make)
+
+To run tests:
+~~~~~~~~~~~~~
+
+    make test
+
+To make the output less noisy:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    make -s test
+
+To debug with gdb
+~~~~~~~~~~~~~~~~~
+
+    make
+    gdb ./arm
+    (gdb) run sample/t0

@@ -1,0 +1,138 @@
+Implementation of a form of communicating sequential processes (CSP) called c-routines.
+
+Starting a c-routine:
+~~~~~~~~~~~~~~~~~~~~~
+
+You start a c-routine using the go() function. For example:
+
+    void f1(void) {
+        printf("I'm a c-routine\n");
+    }
+
+    int main() {
+        go(f1);
+        ...
+    }
+
+After calling go(), we will have 2 concurrent paths through the code, one
+that runs the body of the f1 function and another that continues the
+execution of main.
+
+Calling "go(f1)" creates a new c-routine that runs the body of "f1"
+
+Our c-routines will be concurrent but not parallel. This means that they never
+run simultaneously (otherwise we'd call them threads). Instead, one of them
+will run until it finishes or becomes blocked, giving other c-routines a
+chance to run.
+
+Terminating a c-routine:
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A c-routine terminates in one of those conditions:
+
+    (1) its function returns
+    (2) it tries to send/receive to/from a poisoned channel
+    (3) a channel on which it is blocked is poisoned
+
+Terminating the program:
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Your program terminates if one of 2 things happen:
+
+- main returns
+- all c-routines terminate or become blocked
+
+Channels:
+~~~~~~~~~
+
+Channels are communication mechanisms between c-routines. Our channels are
+non-buffered and synchronous.
+
+Synchronous => a sender/receiver will block until its operation succeeds
+
+Non-buffered => the channel doesn't store any values. A sender and receiver
+                need to be matched before they both proceed
+
+What can you do with a channel?
+
+   Channel* channel(void);       // create a new channel
+   send(Channel* ch, Value v);   // send a message on the channel
+   Value receive(Channel* ch);   // receive a message from the channel
+   void poison(Channel* ch);     // put a poison pill in the channel
+   bool isPoisoned(Channel* ch); // check if the channel is poisoned
+
+Associated channels
+~~~~~~~~~~~~~~~~~~
+
+Each c-routine comes with an associated channel.
+
+The go() function creates a c-routines and returns its associated channel:
+
+    Channel* go(Func f);
+
+A c-routine can discover its channel using the "me()" function:
+
+    Channel* me();    // returns the channel associated with the
+                      // calling c-routine
+
+
+Complete API
+~~~~~~~~~~~~
+
+Look in go.h for details
+
+typedef void (*Func)(void);
+
+typedef union Value {
+    char asChar;
+    short asShort;
+    int asInt;
+    long asLong;
+    long long asLongLong;
+    uint64_t asU64;
+    uint32_t asU32;
+    uint16_t asU16;
+    uint8_t asU8;
+    int64_t asI64;
+    int32_t asI32;
+    int16_t asI16;
+    int8_t asI8;
+    Func asFunc;
+    void* asPointer;
+    Channel* asChannel;
+    char* asString;
+} Value;
+
+extern Channel* go(Func func);           // create a c-routine running func
+                                         // returns its associated channel
+
+extern Channel* me(void);                // returns the associated channel
+                                         // of the caller
+
+extern Channel* channel(void);           // create a new channel
+
+extern void poison(Channel* ch);         // poison a channel
+
+extern bool isPoisoned(Channel* ch);     // check if a channel is poisoned
+
+extern void send(Channel* ch, Value v);  // Send the given value on the channel
+                                         // blocks until it is matched with
+                                         // a receiver
+
+extern Value receive(Channel* ch);       // Receive the next value in the
+                                         // channel. Blocks until it is matched
+                                         // with a sender
+
+extern void again(void);                 // restart the current c-routine
+                                         // takes it back to its starting
+                                         // point
+
+To compile:
+~~~~~~~~~~~
+
+    make
+
+To run test:
+~~~~~~~~~~~~
+
+    make clean test
