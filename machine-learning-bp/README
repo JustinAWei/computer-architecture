@@ -1,5 +1,1 @@
-Overview
---------
-You will be writing a Python program to train and test a machine learning model
-using a trace file of branch history. The trace filename will be passed to your
-program as an argument, which you can access with the following two lines:
+Training classifiers to predict whether a branch instruction will be taken or not taken.
