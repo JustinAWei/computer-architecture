@@ -1,0 +1,185 @@
+#include "cache.h"
+#include "ooo_cpu.h"
+#include <fstream>
+#include <unordered_map>
+
+using namespace std;
+
+// the trace file of cache accesses
+ifstream trace_file;
+uint64_t sample = LLC_SET / 10;
+
+unordered_map<uint64_t, int64_t> feature_table[6];
+deque<uint64_t> pc_hist;
+int64_t replace_threshold = 124, bypass_threshold = 3, training_threshold = 68, saturate = 7;
+bool last_pred[LLC_SET][LLC_WAY];
+uint64_t LRU[LLC_SET][LLC_WAY];
+uint64_t INF = ~(uint64_t(1)<<63);
+uint64_t counter = 0;
+
+int64_t sample_y[LLC_SET][LLC_WAY];
+vector<uint64_t> sample_features[LLC_SET][LLC_WAY];
+
+vector<uint64_t> get_features(uint64_t pc, uint64_t block_address) {
+    uint64_t pc_lower_bits = pc & 0xFFFF;
+    vector<uint64_t> v = {pc_hist[0] >> 2, pc_hist[1] >> 1, pc_hist[2] >> 2, pc_hist[3] >> 3, block_address >> 4, block_address >> 7};
+    for(uint64_t x : v) {
+        x^=pc_lower_bits;
+    }
+    return v;
+}
+
+int64_t prediction(vector<uint64_t> features) {
+	uint64_t y0 = 0;
+	for(int i = 0; i < 6; i++) {
+		y0+=feature_table[i][features[i]];
+	}
+	return y0;
+}
+int64_t prediction(uint64_t pc, uint64_t block_address) {
+    int64_t y0 = 0;
+    uint64_t pc_lower_bits = pc & 0xFFFF;
+    // 1) PCi shifted right by 2, for i = 0.
+    y0 += feature_table[0][(pc_hist[0] >> 2) ^ pc_lower_bits];
+
+    // 2) The three values of PCi shifted right by i, for 1 ≤ i ≤ 3.
+    y0 += feature_table[1][(pc_hist[1] >> 1) ^ pc_lower_bits];
+    y0 += feature_table[2][(pc_hist[2] >> 2) ^ pc_lower_bits];
+    feature_table[3][(pc_hist[3] >> 3) ^ pc_lower_bits];
+
+    // 3) The tag of the current block shifted right by 4,
+    y0+=feature_table[4][(block_address >> 4) ^ pc_lower_bits];
+
+    // 4) The tag of the current block shifted right by 7.
+    y0+=feature_table[5][(block_address >> 7) ^ pc_lower_bits];
+    return y0;
+}
+
+/* returns the trace name, with .txt appended */
+char *get_trace_name() {
+    int i;
+    int len = strlen(ooo_cpu[0].trace_string);
+    for (i = len-1; i >= 0 && ooo_cpu[0].trace_string[i] != '/'; i--) ;
+    char *result = new char[len-i-6];
+    memcpy(result, &(ooo_cpu[0].trace_string[i+1]), len-i-10);
+    strcpy(result+len-i-10, ".txt");
+    return result;
+}
+void CACHE::llc_initialize_replacement(){
+	for(int i = 0; i < 4; i++) pc_hist.push_front(0);
+}
+/* find a cache block to evict
+ * return value should be 0 ~ 15 (corresponds to # of ways in cache)
+ * current_set: an array of BLOCK, of size 16 */
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t pc, uint64_t full_addr, uint32_t type)
+{
+    /* don't modify this code or put anything above it;
+     * if there's an invalid block, we don't need to evict any valid ones */
+    for (int way = 0; way < LLC_WAY; way++) {
+        if (current_set[way].valid == false) {
+			sample_features[set][way] = get_features(pc, full_addr >> LOG2_BLOCK_SIZE);
+            sample_y[set][way] = prediction(sample_features[set][way]);
+            return way;
+        }
+    }
+
+    uint64_t block_address = full_addr >> LOG2_BLOCK_SIZE;
+    int64_t pred = prediction(pc, block_address);
+    bool use = pred < bypass_threshold;
+
+	// cout << pred << " " << use << endl;
+    if(use || type==WRITEBACK) {
+        // find victim candidate using pred bit == no reuse
+        int v = -1;
+		// cout << "last pred" << endl;
+        for (int way = 0; way < LLC_WAY; way++) {
+            if(!last_pred[set][way]) {
+                v = way;
+                break;
+            }
+        }
+		
+        if(v == -1) {
+			// cout << "lru" << endl;
+            // else do lru
+            uint64_t mn = INF;
+            for (int way = 0; way < LLC_WAY; way++) {
+                if(LRU[set][way] < mn) {
+                    mn = LRU[set][way];
+                    v = way;
+                }
+            }
+        }
+
+        // train outgoing
+        if(set <= sample) {
+            if(sample_y[set][v] < training_threshold || last_pred[set][v] == true) {
+				// cout << "training outgoing" << endl;
+				// cout << set << " " << v << endl;
+				// for(uint64_t x : sample_features[set][v]) cout << x << " ";
+				// cout << endl;
+				for(int i = 0; i < 6; i++) {
+	                feature_table[i][sample_features[set][v][i]]+= feature_table[i][sample_features[set][v][i]] < saturate;
+				}
+            }
+            sample_features[set][v] = get_features(pc, block_address);
+            sample_y[set][v] = pred;
+        }
+        last_pred[set][v] = true;
+        // cout << "v: " << v << "\n";
+        return v;
+    }
+    else {
+        // bypass if not used
+        // cout << "bypass\n";
+        return LLC_WAY;
+    }
+}
+
+/* called on every cache hit and cache fill */
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t pc, uint64_t victim_addr, uint32_t type, uint8_t hit, uint64_t latency, uint64_t effective_latency)
+{
+    /* don't modify this code or put anythin above it;
+     * OPT doesn't care about writebacks */
+    if (type == WRITEBACK)
+        return;
+    uint64_t block_address = full_addr >> LOG2_BLOCK_SIZE;
+    pc_hist.push_front(pc);
+    if(pc_hist.size() > 4) {
+        pc_hist.pop_back();
+	}
+
+	// cout << block_address << " " << (hit==true) << " " << (set <= sample) << " " << endl;
+    if(hit) {
+        int64_t pred = prediction(pc, block_address);
+        // sample set
+        if(set <= sample) {
+            if(!sample_y[set][way]) {
+                sample_y[set][way] = pred;
+                sample_features[set][way] = get_features(pc, block_address);
+            }
+            if(sample_y[set][way] > -training_threshold) {
+				// cout << "training incoming" << endl;
+				for(int i = 0; i < 6; i++) {
+					feature_table[i][sample_features[set][way][i]]-= feature_table[i][sample_features[set][way][i]] > -saturate;
+				}
+            }
+            sample_features[set][way] = get_features(pc, block_address);
+            sample_y[set][way] = pred;
+        }
+        LRU[set][way] = counter++;
+        bool reuse = pred < replace_threshold;
+        last_pred[set][way] = reuse;
+    }
+}
+
+/* called at the end of the simulation */
+void CACHE::llc_replacement_final_stats()
+{
+    // close the trace file
+    trace_file.close();
+
+    // your code goes here
+
+}
+

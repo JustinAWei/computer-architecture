@@ -1,0 +1,27 @@
+#include "ooo_cpu.h"
+#include <unordered_map>
+
+unordered_map<uint64_t, uint8_t> local_history;
+unordered_map<uint64_t, int> history_pattern_table;
+
+void O3_CPU::initialize_branch_predictor() {}
+
+uint8_t O3_CPU::predict_branch(uint64_t pc) {
+  // Using A2
+  return history_pattern_table[local_history[pc]^pc] >= 2;
+}
+
+void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
+  // address XOR history
+  int idx = local_history[pc]^pc;
+
+  // Using A2
+  if(taken and history_pattern_table[idx] < 3) {
+    history_pattern_table[idx]++;
+  }
+  else if(!taken and history_pattern_table[idx] > 0)  {
+    history_pattern_table[idx]--;
+  }
+  // update history
+  local_history[pc] = (local_history[pc] << 1) | taken;
+}

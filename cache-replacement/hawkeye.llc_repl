@@ -1,0 +1,136 @@
+#include "cache.h"
+#include "ooo_cpu.h"
+#include <unordered_map>
+#include <string>
+#include <deque>
+
+using namespace std;
+
+uint64_t RRPV[LLC_SET][LLC_WAY];
+deque<uint64_t> occupancy_c[LLC_SET];
+deque<uint64_t> occupancy_addr[LLC_SET];
+deque<uint64_t> occupancy_pc[LLC_SET];
+unordered_map<uint64_t, uint64_t> trainer;
+uint64_t PC[LLC_SET][LLC_WAY];
+const uint64_t max_RRPV = 7;
+
+/* initialize cache replacement state */
+void CACHE::llc_initialize_replacement()
+{
+
+}
+
+/* find a cache block to evict
+ * return value should be 0 ~ 15 (corresponds to # of ways in cache)
+ * current_set: an array of BLOCK, of size 16 */
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t pc, uint64_t full_addr, uint32_t type)
+{
+    /* don't modify this code or put anything above it;
+     * if there's an invalid block, we don't need to evict any valid ones */
+    for (int way = 0; way < LLC_WAY; way++) {
+        if (current_set[way].valid == false) {
+            return way;
+        }
+    }
+    // cout << "find victim" << endl;
+    int victim = 0;
+    for (int way = 0; way < LLC_WAY; way++) {
+	if(RRPV[set][way] == max_RRPV) return way;
+    }
+
+    uint64_t mx = 0;
+    for (int way = 0; way < LLC_WAY; way++) {
+	// evicts line with highest
+        if(RRPV[set][way] > mx) {
+            mx = RRPV[set][way];
+            victim = way;
+	}
+    }
+
+    uint64_t victim_pc = PC[set][victim];
+    if(trainer[victim_pc] >= 1) trainer[victim_pc]--;
+    return victim;
+}
+
+/* called on every cache hit and cache fill */
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t pc, uint64_t victim_addr, uint32_t type, uint8_t hit, uint64_t latency, uint64_t effective_latency)
+{
+    /* don't modify this code or put anythin above it;
+     * OPT doesn't care about writebacks */
+    if (type == WRITEBACK)
+        return;
+
+    PC[set][way] = pc;
+    // cout << "update replacement" << endl;
+    uint64_t block_addr = full_addr >> LOG2_BLOCK_SIZE;
+    // update occ vector
+    occupancy_c[set].push_back(0);
+    occupancy_addr[set].push_back(block_addr);
+    occupancy_pc[set].push_back(pc);
+    if(occupancy_c[set].size() > LLC_WAY) {
+	occupancy_c[set].pop_front();
+        occupancy_addr[set].pop_front();
+        occupancy_pc[set].pop_front();
+    }
+
+    uint64_t max_seen = 0;
+    // check if hit or miss
+    for(int i = occupancy_addr[set].size()-2; i >= 0; i--) {
+//        cout << occupancy_c[set][i] << " ";
+	max_seen = max(max_seen, occupancy_c[set][i]);
+	// find last occurance of addr
+        if(occupancy_addr[set][i] == block_addr) {
+	    // everything below SET_SIZE, we increment
+	    if(max_seen < LLC_WAY) {
+	    	for(uint64_t j = i; j < occupancy_c[set].size(); j++) {
+	    	    occupancy_c[set][j]++;
+	    	}
+	        // its a hit, so we train up
+//		cout << "up\n";
+		trainer[occupancy_pc[set][i]] = min(trainer[occupancy_pc[set][i]]+1, (uint64_t)7);
+	    }
+            // else its a miss, we train down
+	    else {
+//                cout << "down\n";
+                if(trainer[occupancy_pc[set][i]] >= 1) {
+                    trainer[occupancy_pc[set][i]] = trainer[occupancy_pc[set][i]] - 1;
+                }
+            }
+            break;
+        }	
+    }
+
+    // hit and friendly
+    if(hit && (trainer[pc] & 0b100)) {
+        RRPV[set][way] = 0;
+//        cout << "hit friend\n";
+    }
+    // hit and averse
+    else if(hit && !(trainer[pc] & 0b100)) {
+        RRPV[set][way] = max_RRPV;
+//        cout << "hit averse\n";
+    }
+    // miss and friendly
+    else if(!hit && (trainer[pc] & 0b100)) {
+        RRPV[set][way] = 0;
+//        cout << "miss friend\n";
+        // age all lines
+        for(uint64_t i = 0; i < LLC_WAY; i++) {
+	    if(RRPV[set][i] < max_RRPV-1) {
+	        RRPV[set][i]++;
+	    }            
+        }
+    }
+    // miss and averse
+    else if(!hit && !(trainer[pc] & 0b100)) {
+	RRPV[set][way] = max_RRPV;
+//        cout << "miss averse\n";	
+    }
+    return;
+}
+
+/* called at the end of the simulation */
+void CACHE::llc_replacement_final_stats()
+{
+
+}

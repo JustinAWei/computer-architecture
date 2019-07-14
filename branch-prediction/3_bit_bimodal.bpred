@@ -1,0 +1,29 @@
+#include "ooo_cpu.h"
+#include <unordered_map>
+const int k = 7;
+int threshold;
+unordered_map<uint64_t, int> counter;
+
+void O3_CPU::initialize_branch_predictor() {
+	threshold = k/2;
+}
+
+uint8_t O3_CPU::predict_branch(uint64_t pc) {
+	if(!counter.count(pc)) {
+		counter[pc] = threshold;
+	}
+	return counter[pc] > threshold;
+}
+
+void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
+	// updates last k bits with result
+	if(!counter.count(pc)) {
+		counter[pc] = threshold;
+	}
+	if(taken and counter[pc] < k) {
+		counter[pc]++;
+	}
+	else if(!taken and counter[pc] > 0) {
+		counter[pc]--;
+	}
+}

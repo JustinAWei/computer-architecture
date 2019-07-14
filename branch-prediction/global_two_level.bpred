@@ -1,0 +1,29 @@
+#include "ooo_cpu.h"
+#include <unordered_map>
+
+uint16_t history;
+unordered_map<uint64_t, uint64_t> history_pattern_table;
+
+void O3_CPU::initialize_branch_predictor() {}
+
+uint8_t O3_CPU::predict_branch(uint64_t pc) {
+	// predictions by Automaton A2
+	// counter at 0,1 -> not taken
+	// counter at 2,3 -> taken
+	return history_pattern_table[history] >= 2;
+}
+
+void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
+	// using Automaton A2
+	// if taken, add one unless counter at 3
+	// if not taken, substract one unless counter at 0
+	if(taken and history_pattern_table[history] < 3) {
+		history_pattern_table[history]++;
+	}
+	else if (!taken and history_pattern_table[history] > 0) {
+		history_pattern_table[history]--;
+	}
+
+	// update history
+  history = (history<<1) | taken;
+}

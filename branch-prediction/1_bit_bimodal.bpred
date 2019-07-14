@@ -1,0 +1,15 @@
+#include "ooo_cpu.h"
+#include <unordered_map>
+
+unordered_map<uint64_t, bool> last;
+
+void O3_CPU::initialize_branch_predictor() {}
+
+uint8_t O3_CPU::predict_branch(uint64_t pc)
+{
+	return last[pc];
+}
+
+void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
+	last[pc] = taken;
+}

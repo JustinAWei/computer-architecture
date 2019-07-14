@@ -1,0 +1,2 @@
+Implementations of the Bimodal Branch Predictor, Two Level Branch Predictor, and Perceptron Branch Predictor.
+bpred files to be used with ChampSim.

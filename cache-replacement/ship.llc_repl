@@ -1,0 +1,93 @@
+#include "cache.h"
+#include "ooo_cpu.h"
+#include <fstream>
+#include <unordered_map>
+
+using namespace std;
+
+// the trace file of cache accesses
+ifstream trace_file;
+int RRPV[LLC_SET][LLC_WAY];
+unordered_map<uint64_t, bool> outcome;
+unordered_map<uint64_t, uint64_t> SHCT, signature;
+
+
+/* returns the trace name, with .txt appended */
+char *get_trace_name() {
+    int i;
+    int len = strlen(ooo_cpu[0].trace_string);
+    for (i = len-1; i >= 0 && ooo_cpu[0].trace_string[i] != '/'; i--) ;
+    char *result = new char[len-i-6];
+    memcpy(result, &(ooo_cpu[0].trace_string[i+1]), len-i-10);
+    strcpy(result+len-i-10, ".txt");
+    return result;
+}
+void CACHE::llc_initialize_replacement(){}
+/* find a cache block to evict
+ * return value should be 0 ~ 15 (corresponds to # of ways in cache)
+ * current_set: an array of BLOCK, of size 16 */
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t pc, uint64_t full_addr, uint32_t type)
+{
+    /* don't modify this code or put anything above it;
+     * if there's an invalid block, we don't need to evict any valid ones */
+    for (int way = 0; way < LLC_WAY; way++) {
+        if (current_set[way].valid == false) {
+            RRPV[set][way] = 2;
+            return way;
+        }
+    }
+    uint64_t block_address = full_addr >> LOG2_BLOCK_SIZE;
+    while(true) {
+        for (int way = 0; way < LLC_WAY; way++) {
+            if(RRPV[set][way] == 3) {
+                uint64_t victim_block_addr = current_set[way].address >> LOG2_BLOCK_SIZE;
+                if(!outcome[victim_block_addr]) {
+                    if(SHCT[signature[victim_block_addr]] > 0) {
+                        SHCT[signature[victim_block_addr]]--;
+                    }
+                }
+                outcome[block_address] = false;
+                signature[block_address] = pc;
+                if(SHCT[signature[block_address]] == 0) {
+                    RRPV[set][way] = 3;
+                }
+                else {
+                    RRPV[set][way] = 2;
+                }
+                return way;
+            }
+        }
+
+        for (int way = 0; way < LLC_WAY; way++) {
+            RRPV[set][way]++;
+        }
+    }
+
+    return 0;
+}
+
+/* called on every cache hit and cache fill */
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t pc, uint64_t victim_addr, uint32_t type, uint8_t hit, uint64_t latency, uint64_t effective_latency)
+{
+    /* don't modify this code or put anythin above it;
+     * OPT doesn't care about writebacks */
+    if (type == WRITEBACK)
+        return;
+    uint64_t block_address = full_addr >> LOG2_BLOCK_SIZE;
+    if(hit) {
+        outcome[block_address] = true;
+        if(SHCT[signature[block_address]] < 3) {
+            SHCT[signature[block_address]]++;
+        }
+    }
+}
+
+/* called at the end of the simulation */
+void CACHE::llc_replacement_final_stats()
+{
+    // close the trace file
+    trace_file.close();
+
+    // your code goes here
+
+}

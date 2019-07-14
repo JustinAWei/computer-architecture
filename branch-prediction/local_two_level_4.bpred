@@ -1,0 +1,26 @@
+#include "ooo_cpu.h"
+#include <unordered_map>
+
+unordered_map<uint64_t, uint8_t> local_history;
+unordered_map<uint8_t, int> history_pattern_table;
+const int last_four = 15;
+
+void O3_CPU::initialize_branch_predictor() {}
+
+uint8_t O3_CPU::predict_branch(uint64_t pc) {
+  // Using A2
+  return history_pattern_table[local_history[pc]] >= 2;
+}
+
+void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
+  // Using A2
+  if(taken and history_pattern_table[local_history[pc]] < 3) {
+    history_pattern_table[local_history[pc]]++;
+  }
+  else if(!taken and history_pattern_table[local_history[pc]] > 0)  {
+    history_pattern_table[local_history[pc]]--;
+  }
+  // update history
+  local_history[pc] = (local_history[pc] << 1) | taken;
+  local_history[pc] &= last_four;
+}
